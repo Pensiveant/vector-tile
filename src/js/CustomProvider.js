@@ -662,9 +662,7 @@ class CustomProvider {
             }),
           });
         }
-      }
-
-      else if (layer.type == "symbol") {
+      } else if (layer.type == "symbol") {
         let textField = layer.layout["text-field"];
         if (textField) {
           textField = textField.replace("{", "");
@@ -672,18 +670,43 @@ class CustomProvider {
         }
         if (layer.layout["symbol-placement"] == "line") {
           if (layer.layout["icon-image"]) {
+            console.log(layer);
+            let textSymbolizer = new protomapsL.ShieldSymbolizer({
+              // FontAttr
+              font: getFont(layer.layout),
+
+              // TextAttr
+              labelProps: textField ? [textField] : undefined,
+              textTransform: layer.layout["text-transform"],
+
+              //
+              fill: layer.paint["text-color"],
+              stroke: layer.paint["text-halo-color"],
+              width: layer.paint["text-halo-width"],
+              padding:0,
+            });
+            let symbolizer = textSymbolizer;
+
+            let iconSymbolizer = new protomapsL.IconSymbolizer({
+              name: layer.layout["icon-image"],
+              sheet: sheet,
+            });
+
+            symbolizer = new protomapsL.GroupSymbolizer([
+              iconSymbolizer,
+              textSymbolizer,
+              // new protomapsL.OffsetSymbolizer(textSymbolizer, {
+              //   offsetX: 0,
+              //   offsetY: 0,
+              //   justify: undefined,
+              //   placements: undefined,
+              // }),
+            ]);
+
             label_rules.push({
               dataLayer: layer["source-layer"],
               filter: filter,
-              symbolizer: new protomapsL.IconSymbolizer({
-                name: layer.layout["icon-image"],
-                sheet: sheet,
-                fill: layer.paint["text-color"],
-                stroke: layer.paint["text-halo-color"],
-                width: layer.paint["text-halo-width"],
-                labelProps: textField ? [textField] : undefined,
-                fontSize: layer.layout["text-size"],
-              }),
+              symbolizer,
             });
           } else {
             label_rules.push({
@@ -699,20 +722,6 @@ class CustomProvider {
               }),
             });
           }
-        } else if (layer.layout["icon-image"]) {
-          label_rules.push({
-            dataLayer: layer["source-layer"],
-            filter: filter,
-            symbolizer: new protomapsL.IconSymbolizer({
-              name: layer.layout["icon-image"],
-              sheet: sheet,
-              fill: layer.paint["text-color"],
-              stroke: layer.paint["text-halo-color"],
-              width: layer.paint["text-halo-width"],
-              labelProps: textField ? [textField] : undefined,
-            }),
-          });
-          
         } else {
           const textAnchor = layer.layout["text-anchor"];
           let justify;
@@ -727,25 +736,43 @@ class CustomProvider {
               justify = protomapsL.Justify.Center;
               break;
           }
+
+          let textSymbolizer = new protomapsL.TextSymbolizer({
+            // FontAttr
+            font: getFont(layer.layout),
+
+            // TextAttr
+            labelProps: textField ? [textField] : undefined,
+            textTransform: layer.layout["text-transform"],
+
+            //
+            fill: layer.paint["text-color"],
+            stroke: layer.paint["text-halo-color"],
+            width: layer.paint["text-halo-width"],
+            justify: justify,
+          });
+          let symbolizer = textSymbolizer;
+
+          if (layer.layout["icon-image"]) {
+            let iconSymbolizer = new protomapsL.IconSymbolizer({
+              name: layer.layout["icon-image"],
+              sheet: sheet,
+            });
+
+            symbolizer = new protomapsL.GroupSymbolizer([
+              iconSymbolizer,
+              textSymbolizer,
+            ]);
+          }
+
           let ruleOptions = {
             dataLayer: layer["source-layer"],
             filter: filter,
-            symbolizer: new protomapsL.TextSymbolizer({
-              // font 属性
-              font: getFont(layer.layout),
-              fill: layer.paint["text-color"],
-              stroke: layer.paint["text-halo-color"],
-              width: layer.paint["text-halo-width"],
-              textTransform: layer.layout["text-transform"],
-              justify: justify,
-              labelProps: textField ? [textField] : undefined,
-              fontSize: layer.layout["text-size"],
-            }),
+            symbolizer,
           };
           label_rules.push(ruleOptions);
         }
-      }
-      else if (layer.type == "circle") {
+      } else if (layer.type == "circle") {
         paint_rules.push({
           dataLayer: layer["source-layer"],
           filter: filter,

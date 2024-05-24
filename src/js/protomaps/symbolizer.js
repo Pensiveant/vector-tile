@@ -18,16 +18,16 @@ export const Justify = {
   Right: 3,
 };
 
-// export enum TextPlacements {
-//   N = 1,
-//   Ne = 2,
-//   E = 3,
-//   Se = 4,
-//   S = 5,
-//   Sw = 6,
-//   W = 7,
-//   Nw = 8,
-// }
+export const TextPlacements = {
+  N: 1,
+  Ne: 2,
+  E: 3,
+  Se: 4,
+  S: 5,
+  Sw: 6,
+  W: 7,
+  Nw: 8,
+};
 
 export const createPattern = (width, height, fn) => {
   const canvas = document.createElement("canvas");
@@ -857,7 +857,7 @@ export class LineLabelSymbolizer {
     this.offset = new NumberAttr(options.offset, 0);
     this.position = options.position ?? LineLabelPlacement.Above;
     this.maxLabelCodeUnits = new NumberAttr(options.maxLabelChars, 40);
-    this.repeatDistance = new NumberAttr(options.repeatDistance, 250);
+    this.repeatDistance = new NumberAttr(options.repeatDistance, 1000);
   }
 
   place(layout, geom, feature) {
