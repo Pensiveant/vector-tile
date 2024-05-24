@@ -681,7 +681,7 @@ class CustomProvider {
                 fill: layer.paint["text-color"],
                 stroke: layer.paint["text-halo-color"],
                 width: layer.paint["text-halo-width"],
-                label_props: textField ? [textField] : undefined,
+                labelProps: textField ? [textField] : undefined,
                 fontSize: layer.layout["text-size"],
               }),
             });
@@ -695,7 +695,7 @@ class CustomProvider {
                 width: layer.paint["text-halo-width"],
                 stroke: layer.paint["text-halo-color"],
                 textTransform: layer.layout["text-transform"],
-                label_props: textField ? [textField] : undefined,
+                labelProps: textField ? [textField] : undefined,
               }),
             });
           }
@@ -709,9 +709,10 @@ class CustomProvider {
               fill: layer.paint["text-color"],
               stroke: layer.paint["text-halo-color"],
               width: layer.paint["text-halo-width"],
-              label_props: textField ? [textField] : undefined,
+              labelProps: textField ? [textField] : undefined,
             }),
           });
+          
         } else {
           const textAnchor = layer.layout["text-anchor"];
           let justify;
@@ -731,19 +732,13 @@ class CustomProvider {
             filter: filter,
             symbolizer: new protomapsL.TextSymbolizer({
               // font 属性
-              // font: getFont(layer.layout),
-              family: layer.layout["text-font"],
-              size: 12,
-              weight: undefined,
-              style: undefined,
-
-              labelProps: layer.layout["text-field"].replace('{', '').replace('}', ''),
+              font: getFont(layer.layout),
               fill: layer.paint["text-color"],
               stroke: layer.paint["text-halo-color"],
               width: layer.paint["text-halo-width"],
               textTransform: layer.layout["text-transform"],
               justify: justify,
-              label_props: textField ? [textField] : undefined,
+              labelProps: textField ? [textField] : undefined,
               fontSize: layer.layout["text-size"],
             }),
           };
