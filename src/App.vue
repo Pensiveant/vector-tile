@@ -41,7 +41,7 @@ export default {
       });
       viewer.cesiumWidget.creditContainer.style.display = "none"; // 去除logo
       window.viewer = viewer;
-
+      viewer.imageryLayers.add(myProvider);
     }
 
   }

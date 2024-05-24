@@ -1,5 +1,6 @@
-import * as Cesium from 'cesium';
-import * as protomapsL from './protomaps/index'
+import * as Cesium from "cesium";
+import * as protomapsL from "./protomaps/index";
+import Point from "@mapbox/point-geometry";
 
 function getFont(obj) {
   let fontfaces = [];
@@ -44,6 +45,7 @@ function widthFn(width_obj, gap_obj) {
     return tmp;
   };
 }
+
 function numberOrFn(obj, defaultValue = 0) {
   if (!obj) return defaultValue;
   if (typeof obj == "number") {
@@ -58,7 +60,7 @@ function numberFn(obj) {
   }
   if (obj.base && obj.stops) {
     return (z) => {
-      return protomaps.exp(obj.base, obj.stops)(z - 1);
+      return protomapsL.exp(obj.base, obj.stops)(z - 1);
     };
   } else if (
     obj[0] == "interpolate" &&
@@ -71,7 +73,7 @@ function numberFn(obj) {
       stops.push([slice[i], slice[i + 1]]);
     }
     return (z) => {
-      return protomaps.exp(obj[1][1], stops)(z - 1);
+      return protomapsL.exp(obj[1][1], stops)(z - 1);
     };
   } else if (obj[0] == "step" && obj[1][0] == "get") {
     let slice = obj.slice(2);
@@ -150,7 +152,6 @@ function loadImage(url) {
   });
 }
 
-
 class CustomProvider {
   /**
    * ArcGIS矢量切片图层加载
@@ -224,7 +225,11 @@ class CustomProvider {
     let tileSize = Cesium.defaultValue(options.tileSize, 256);
     let levelDiff = Cesium.defaultValue(options.levelDiff, 0);
     let cache = new protomapsL.TileCache(this._source, tileSize);
-    this._view = new protomapsL.View(cache, this._maximumNativeLevel, levelDiff);
+    this._view = new protomapsL.View(
+      cache,
+      this._maximumNativeLevel,
+      levelDiff
+    );
     this._debug = Cesium.defaultValue(options.debug, "");
     this._levelOffset = Cesium.defaultValue(options.levelOffset, 0);
   }
@@ -360,7 +365,7 @@ class CustomProvider {
 
       // 加载style文件
       styleJson = await styleJsonResource.fetchJson();
-      console.log(styleJson)
+      console.log(styleJson);
     } else {
       // 当前就是style文件
       styleJson = resultJson;
@@ -568,6 +573,7 @@ class CustomProvider {
         const fillPattern = layer.paint["fill-pattern"];
         const fill = layer.paint["fill-color"];
         const opacity = layer.paint["fill-opacity"];
+        const outlineColor = layer.paint["fill-outline-color"];
         let pattern;
         if (fillPattern) {
           const patternInfor = sheet.get(fillPattern);
@@ -601,8 +607,7 @@ class CustomProvider {
             opacity,
           }),
         });
-      }
-      else if (layer.type == "fill-extrusion") {
+      } else if (layer.type == "fill-extrusion") {
         // 用不同的填充来绘制填充挤
         // simulate fill-extrusion with plain fill
         paint_rules.push({
@@ -613,53 +618,51 @@ class CustomProvider {
             opacity: layer.paint["fill-extrusion-opacity"],
           }),
         });
+      } else if (layer.type == "line") {
+        const lineColorInfor = layer.paint["line-color"];
+        let lineColor;
+        if (lineColorInfor.stops) {
+          lineColor = function (z, f) {
+            const stops = lineColorInfor.stops;
+            const length = stops.length;
+            for (let i = length - 1; i >= 0; i--) {
+              if (z < stops[i][0]) {
+                return stops[i][1];
+              }
+            }
+            return stops[length - 1][1];
+          };
+        } else {
+          lineColor = lineColorInfor;
+        }
+        // simulate gap-width
+        if (layer.paint["line-dasharray"]) {
+          paint_rules.push({
+            dataLayer: layer["source-layer"],
+            filter: filter,
+            symbolizer: new protomapsL.LineSymbolizer({
+              width: widthFn(
+                layer.paint["line-width"],
+                layer.paint["line-gap-width"]
+              ),
+              dash: layer.paint["line-dasharray"],
+              dashColor: lineColor,
+            }),
+          });
+        } else {
+          paint_rules.push({
+            dataLayer: layer["source-layer"],
+            filter: filter,
+            symbolizer: new protomapsL.LineSymbolizer({
+              color: lineColor,
+              width: widthFn(
+                layer.paint["line-width"],
+                layer.paint["line-gap-width"]
+              ),
+            }),
+          });
+        }
       }
-
-      // else if (layer.type == "line") {
-      //   const lineColorInfor = layer.paint["line-color"];
-      //   let lineColor;
-      //   if (lineColorInfor.stops) {
-      //     lineColor = function (z, f) {
-      //       const stops = lineColorInfor.stops;
-      //       const length = stops.length;
-      //       for (let i = length - 1; i >= 0; i--) {
-      //         if (z < stops[i][0]) {
-      //           return stops[i][1];
-      //         }
-      //       }
-      //       return stops[length - 1][1];
-      //     };
-      //   } else {
-      //     lineColor = lineColorInfor;
-      //   }
-      //   // simulate gap-width
-      //   if (layer.paint["line-dasharray"]) {
-      //     paint_rules.push({
-      //       dataLayer: layer["source-layer"],
-      //       filter: filter,
-      //       symbolizer: new protomapsL.LineSymbolizer({
-      //         width: widthFn(
-      //           layer.paint["line-width"],
-      //           layer.paint["line-gap-width"]
-      //         ),
-      //         dash: layer.paint["line-dasharray"],
-      //         dashColor: lineColor,
-      //       }),
-      //     });
-      //   } else {
-      //     paint_rules.push({
-      //       dataLayer: layer["source-layer"],
-      //       filter: filter,
-      //       symbolizer: new protomapsL.LineSymbolizer({
-      //         color: lineColor,
-      //         width: widthFn(
-      //           layer.paint["line-width"],
-      //           layer.paint["line-gap-width"]
-      //         ),
-      //       }),
-      //     });
-      //   }
-      // }
 
       else if (layer.type == "symbol") {
         let textField = layer.layout["text-field"];
@@ -768,4 +771,4 @@ class CustomProvider {
     return { paint_rules: paint_rules, label_rules: label_rules, tasks: [] };
   }
 }
-  export default CustomProvider
+export default CustomProvider;

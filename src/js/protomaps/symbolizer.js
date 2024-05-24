@@ -269,7 +269,15 @@ export class IconSymbolizer {
   place(layout, geom, feature) {
     const pt = geom[0];
     const a = new Point(geom[0][0].x, geom[0][0].y);
-    const loc = this.sheet.get(this.name);
+    let name = this.name;
+    if (/{/.test(name) && /}/.test(name)) {
+      // 名字中存在从属性读值情况
+      let field = name.split("{")[1].split("}")[0];
+      let fieldValue = feature.props[field];
+      name = name.replace(`{${field}}`, fieldValue);
+    }
+
+    const loc = this.sheet.get(name);
     const width = loc.w / this.dpr;
     const height = loc.h / this.dpr;
 
