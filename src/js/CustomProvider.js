@@ -681,9 +681,10 @@ class CustomProvider {
 
               //
               fill: layer.paint["text-color"],
+              background: "transparent",
               stroke: layer.paint["text-halo-color"],
               width: layer.paint["text-halo-width"],
-              padding:0,
+              padding: 0,
             });
             let symbolizer = textSymbolizer;
 
